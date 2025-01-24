@@ -63,6 +63,15 @@ public partial class @PlayerInputSystem: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""UnloadElevator"",
+                    ""type"": ""Button"",
+                    ""id"": ""2c6ffc56-4608-4f28-8c7e-40d9274b36b0"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -79,12 +88,12 @@ public partial class @PlayerInputSystem: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
-                    ""id"": ""b290db33-dc0d-44c8-bc0a-05f756df4e60"",
+                    ""id"": ""f285aebf-4919-4112-82c9-51843c0852e5"",
                     ""path"": ""<Keyboard>/e"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Mashing"",
+                    ""action"": ""UnloadElevator"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -139,6 +148,7 @@ public partial class @PlayerInputSystem: IInputActionCollection2, IDisposable
         // Gameplay
         m_Gameplay = asset.FindActionMap("Gameplay", throwIfNotFound: true);
         m_Gameplay_Mashing = m_Gameplay.FindAction("Mashing", throwIfNotFound: true);
+        m_Gameplay_UnloadElevator = m_Gameplay.FindAction("UnloadElevator", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Newaction = m_UI.FindAction("New action", throwIfNotFound: true);
@@ -257,11 +267,13 @@ public partial class @PlayerInputSystem: IInputActionCollection2, IDisposable
     private readonly InputActionMap m_Gameplay;
     private List<IGameplayActions> m_GameplayActionsCallbackInterfaces = new List<IGameplayActions>();
     private readonly InputAction m_Gameplay_Mashing;
+    private readonly InputAction m_Gameplay_UnloadElevator;
     public struct GameplayActions
     {
         private @PlayerInputSystem m_Wrapper;
         public GameplayActions(@PlayerInputSystem wrapper) { m_Wrapper = wrapper; }
         public InputAction @Mashing => m_Wrapper.m_Gameplay_Mashing;
+        public InputAction @UnloadElevator => m_Wrapper.m_Gameplay_UnloadElevator;
         public InputActionMap Get() { return m_Wrapper.m_Gameplay; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -274,6 +286,9 @@ public partial class @PlayerInputSystem: IInputActionCollection2, IDisposable
             @Mashing.started += instance.OnMashing;
             @Mashing.performed += instance.OnMashing;
             @Mashing.canceled += instance.OnMashing;
+            @UnloadElevator.started += instance.OnUnloadElevator;
+            @UnloadElevator.performed += instance.OnUnloadElevator;
+            @UnloadElevator.canceled += instance.OnUnloadElevator;
         }
 
         private void UnregisterCallbacks(IGameplayActions instance)
@@ -281,6 +296,9 @@ public partial class @PlayerInputSystem: IInputActionCollection2, IDisposable
             @Mashing.started -= instance.OnMashing;
             @Mashing.performed -= instance.OnMashing;
             @Mashing.canceled -= instance.OnMashing;
+            @UnloadElevator.started -= instance.OnUnloadElevator;
+            @UnloadElevator.performed -= instance.OnUnloadElevator;
+            @UnloadElevator.canceled -= instance.OnUnloadElevator;
         }
 
         public void RemoveCallbacks(IGameplayActions instance)
@@ -360,6 +378,7 @@ public partial class @PlayerInputSystem: IInputActionCollection2, IDisposable
     public interface IGameplayActions
     {
         void OnMashing(InputAction.CallbackContext context);
+        void OnUnloadElevator(InputAction.CallbackContext context);
     }
     public interface IUIActions
     {

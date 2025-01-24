@@ -17,6 +17,8 @@ public class FloorBehaviour : MonoBehaviour
     public void EnablePlatformEffector(bool value)
     {
         _platformEffector.enabled = value;
+        _collider.isTrigger = !value;
+        Debug.Log("Platform Effector " + value);
         //_collider.enabled = value;
     }
     public FloorBehaviour GetLowerFloor() => lowerFloor;

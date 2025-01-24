@@ -41,6 +41,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "UnloadElevator",
+                    "type": "Button",
+                    "id": "2c6ffc56-4608-4f28-8c7e-40d9274b36b0",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -57,12 +66,12 @@
                 },
                 {
                     "name": "",
-                    "id": "b290db33-dc0d-44c8-bc0a-05f756df4e60",
+                    "id": "f285aebf-4919-4112-82c9-51843c0852e5",
                     "path": "<Keyboard>/e",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Mashing",
+                    "action": "UnloadElevator",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

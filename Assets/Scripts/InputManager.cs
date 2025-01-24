@@ -35,18 +35,19 @@ public class InputManager : MonoBehaviour
     #endregion
     #region Gameplay Input Event Logic
     public static event Action buttonMashed;
+    public static event Action buttonUnloadElevator;
     public void GameplayMapEnabled()
     {
         inputSystem.Gameplay.Mashing.performed += Mashing_performed;
+        inputSystem.Gameplay.UnloadElevator.performed += UnloadElevator_performed;
     }
     public void GameplayMapDisabled()
     {
         inputSystem.Gameplay.Mashing.performed -= Mashing_performed;
+        inputSystem.Gameplay.UnloadElevator.performed -= UnloadElevator_performed;
     }
-    private void Mashing_performed(UnityEngine.InputSystem.InputAction.CallbackContext obj)
-    {
-        buttonMashed?.Invoke();
-    }
+    private void Mashing_performed(UnityEngine.InputSystem.InputAction.CallbackContext obj) => buttonMashed?.Invoke();
+    private void UnloadElevator_performed(UnityEngine.InputSystem.InputAction.CallbackContext obj) => buttonUnloadElevator?.Invoke();
     #endregion
     #region UI Input Event Logic
     #endregion
