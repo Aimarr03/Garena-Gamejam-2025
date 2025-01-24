@@ -4,7 +4,9 @@ public class Elevator : MonoBehaviour
 {
     private Rigidbody2D _rigidBody;
     private Collider2D _collider;
-    
+
+    private FloorBehaviour _currentLowerFloor;
+
     [SerializeField, Range(1, 15)] private float _maxUpwardVelocity = 10f;
     [SerializeField, Range(1,200)]private float forcePower = 2f;
     private void Awake()
@@ -42,6 +44,36 @@ public class Elevator : MonoBehaviour
 
             float CollisionPower = (thisMass + otherMass) * relativeVelocity.magnitude;
             Debug.Log($"Collision Power <b><color=red>{CollisionPower}</color></b>");
+        }
+    }
+    private void OnTriggerExit2D(Collider2D collision)
+    {
+        //Debug.Log($"Triggering {collision.gameObject}");
+        if (collision.gameObject.CompareTag("Floor"))
+        {
+            float bottomElevatorPosition = _collider.bounds.min.y;
+            float upperFloorPosition = collision.bounds.max.y;
+            float calculateDistance = bottomElevatorPosition - upperFloorPosition;
+            //Debug.Log($"Calculate Distance = {calculateDistance}");
+            if(calculateDistance > 0)
+            {
+                Debug.Log($"Renew Lower Floor: {collision.gameObject}");
+                _currentLowerFloor = collision.gameObject.GetComponent<FloorBehaviour>();
+            }
+            else
+            {
+                if(_currentLowerFloor != null)
+                {
+                    FloorBehaviour lowerFloor = _currentLowerFloor.GetLowerFloor();
+                    string groundLevel = lowerFloor == null ? "Ground Level" : lowerFloor.gameObject.ToString();
+                    Debug.Log($"Renew Lower Floor: {groundLevel}");
+                    _currentLowerFloor = _currentLowerFloor.GetLowerFloor();
+                }
+                else
+                {
+                    Debug.Log("Nulling Lower Floor");
+                }
+            }
         }
     }
     private void InputManager_buttonMashed()
