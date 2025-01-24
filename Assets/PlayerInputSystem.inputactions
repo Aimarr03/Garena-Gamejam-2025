@@ -6,7 +6,7 @@
             "id": "ebf8d675-8ac4-4af2-8820-e0e6cae1e0f2",
             "actions": [
                 {
-                    "name": "New action",
+                    "name": "Escape",
                     "type": "Button",
                     "id": "23338990-b4b3-4ada-9a03-ca60a7d14619",
                     "expectedControlType": "",
@@ -23,7 +23,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "New action",
+                    "action": "Escape",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

@@ -28,7 +28,7 @@ public partial class @PlayerInputSystem: IInputActionCollection2, IDisposable
             ""id"": ""ebf8d675-8ac4-4af2-8820-e0e6cae1e0f2"",
             ""actions"": [
                 {
-                    ""name"": ""New action"",
+                    ""name"": ""Escape"",
                     ""type"": ""Button"",
                     ""id"": ""23338990-b4b3-4ada-9a03-ca60a7d14619"",
                     ""expectedControlType"": """",
@@ -45,7 +45,7 @@ public partial class @PlayerInputSystem: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""New action"",
+                    ""action"": ""Escape"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -135,7 +135,7 @@ public partial class @PlayerInputSystem: IInputActionCollection2, IDisposable
 }");
         // General
         m_General = asset.FindActionMap("General", throwIfNotFound: true);
-        m_General_Newaction = m_General.FindAction("New action", throwIfNotFound: true);
+        m_General_Escape = m_General.FindAction("Escape", throwIfNotFound: true);
         // Gameplay
         m_Gameplay = asset.FindActionMap("Gameplay", throwIfNotFound: true);
         m_Gameplay_Mashing = m_Gameplay.FindAction("Mashing", throwIfNotFound: true);
@@ -210,12 +210,12 @@ public partial class @PlayerInputSystem: IInputActionCollection2, IDisposable
     // General
     private readonly InputActionMap m_General;
     private List<IGeneralActions> m_GeneralActionsCallbackInterfaces = new List<IGeneralActions>();
-    private readonly InputAction m_General_Newaction;
+    private readonly InputAction m_General_Escape;
     public struct GeneralActions
     {
         private @PlayerInputSystem m_Wrapper;
         public GeneralActions(@PlayerInputSystem wrapper) { m_Wrapper = wrapper; }
-        public InputAction @Newaction => m_Wrapper.m_General_Newaction;
+        public InputAction @Escape => m_Wrapper.m_General_Escape;
         public InputActionMap Get() { return m_Wrapper.m_General; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -225,16 +225,16 @@ public partial class @PlayerInputSystem: IInputActionCollection2, IDisposable
         {
             if (instance == null || m_Wrapper.m_GeneralActionsCallbackInterfaces.Contains(instance)) return;
             m_Wrapper.m_GeneralActionsCallbackInterfaces.Add(instance);
-            @Newaction.started += instance.OnNewaction;
-            @Newaction.performed += instance.OnNewaction;
-            @Newaction.canceled += instance.OnNewaction;
+            @Escape.started += instance.OnEscape;
+            @Escape.performed += instance.OnEscape;
+            @Escape.canceled += instance.OnEscape;
         }
 
         private void UnregisterCallbacks(IGeneralActions instance)
         {
-            @Newaction.started -= instance.OnNewaction;
-            @Newaction.performed -= instance.OnNewaction;
-            @Newaction.canceled -= instance.OnNewaction;
+            @Escape.started -= instance.OnEscape;
+            @Escape.performed -= instance.OnEscape;
+            @Escape.canceled -= instance.OnEscape;
         }
 
         public void RemoveCallbacks(IGeneralActions instance)
@@ -355,7 +355,7 @@ public partial class @PlayerInputSystem: IInputActionCollection2, IDisposable
     }
     public interface IGeneralActions
     {
-        void OnNewaction(InputAction.CallbackContext context);
+        void OnEscape(InputAction.CallbackContext context);
     }
     public interface IGameplayActions
     {
