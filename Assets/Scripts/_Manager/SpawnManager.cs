@@ -61,6 +61,8 @@ public class SpawnManager : MonoBehaviour
     }
     private void Update()
     {
+        if (GameManager.instance.paused) return;
+        if (!GameManager.instance.CheckGameState(GameState.Gameplay)) return;
         if (currentPassengerCount > 0) return;
         currentDuration += Time.deltaTime;
         if(currentDuration > _baseInterval)
