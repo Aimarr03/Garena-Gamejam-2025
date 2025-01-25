@@ -13,19 +13,28 @@ public class Passenger : MonoBehaviour
     [SerializeField, Range(2, 4)] private float speed = 2.5f;
     [SerializeField] private LayerMask npcMask;
 
-    public PassengerState currentState = PassengerState.Idle;
+    private PassengerState _currentState;
+    public bool isChanging = false;
+    public PassengerState currentState
+    {
+        get => _currentState;
+        set
+        {
+            Debug.Log($"State changing from {_currentState} to {value}");
+            _currentState = value;
+        }
+    }
     private Vector2 destination;
     private Vector2 movementDirection;
-    private float direction;
 
-    public delegate void OnArrive();
+    private SpriteRenderer[] allSpriteRenderers;
 
     public static event EventHandler<PassengerState> OnFinishState;
     private void Awake()
     {
         _collider = GetComponent<Collider2D>();
         _rigidBody = GetComponent<Rigidbody2D>();
-
+        allSpriteRenderers = GetComponentsInChildren<SpriteRenderer>();
         if (_collider == null || _rigidBody == null)
         {
             Debug.LogError("Passenger is missing required components.");
@@ -34,15 +43,17 @@ public class Passenger : MonoBehaviour
 
     private void Update()
     {
+        if (isChanging) return;
         HandleMovementLogic();
         HandleDetectingLogic();
+        //Debug.Log(currentState);
     }
 
     private void HandleMovementLogic()
     {
         if (currentState == PassengerState.Idle || currentState == PassengerState.Arrived) return;
 
-        
+        //Debug.Log(Vector2.Distance(transform.position, destination) < 0.1f);
         if (Vector2.Distance(transform.position, destination) < 0.1f)
         {
             _rigidBody.linearVelocity = Vector2.zero;
@@ -51,13 +62,17 @@ public class Passenger : MonoBehaviour
                 case PassengerState.GoingIn:
                     OnFinishState?.Invoke(this, currentState);
                     currentState = PassengerState.Idle;
+                    isChanging = true;
                     break;
                 case PassengerState.Elevator:
+                    Debug.Log("Arrive at elevator");
                     currentState = PassengerState.Idle;
+                    isChanging = true;
                     break;
                 case PassengerState.GoingOut:
                     currentState = PassengerState.Arrived;
                     OnFinishState?.Invoke(this, currentState);
+                    isChanging = true;
                     break;
             }
         }
@@ -101,6 +116,7 @@ public class Passenger : MonoBehaviour
         if (currentState == PassengerState.Idle)
         {
             currentState = PassengerState.GoingIn;
+            isChanging = false;
         }
 
     }
@@ -112,7 +128,16 @@ public class Passenger : MonoBehaviour
         movementDirection.x = movementDirection.x > 0? 1 : -1;
         currentState = state;
         _rigidBody.linearVelocityX = speed * movementDirection.x;
-        Debug.Log($"Destination set to {destination} with state {state}.");
+        Debug.Log($"Destination set to {Vector2.Distance(transform.position, destination)} with state {currentState}.");
+        isChanging = false;
+    }
+    public void SetVisualOnLift(bool value)
+    {
+        int orders = value ? 30 : -30;
+        foreach(SpriteRenderer sprite in allSpriteRenderers)
+        {
+            sprite.sortingOrder += orders;
+        }
     }
 }
 

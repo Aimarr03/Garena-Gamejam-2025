@@ -174,6 +174,8 @@ public class Elevator : MonoBehaviour
             StartCoroutine(HandlesLoadingPassengers());
         }
     }
+    [SerializeField] private Collider2D _elevatorStarterPoint;
+    [SerializeField] private Collider2D _elevatorWaitingArea;
     private IEnumerator HandlesLoadingPassengers()
     {
         List<Passenger> passengerOnTheFloor = ListOfPassengersWaiting[_currentFloorManager.floorNumber];
@@ -184,18 +186,24 @@ public class Elevator : MonoBehaviour
         Debug.Log("Handled Loading Passengers");
         Queue<Passenger> queue = new Queue<Passenger>(passengerOnTheFloor);
         if (queue.Count == 0) yield break;
-        Vector2 destinations = _collider.bounds.min;
+        Bounds AreaLift = _elevatorWaitingArea.bounds;
+        Vector2 destinations = new Vector2(Random.Range(AreaLift.min.x, AreaLift.max.x), AreaLift.min.y);
         while(passengers.Count < maxPassengers)
         {
             Passenger passenger = queue.Dequeue();
-            passenger.SetDestination(destinations, PassengerState.Elevator);
+            passenger.transform.position = _elevatorStarterPoint.bounds.min;
+            passenger.SetVisualOnLift(true);
             passengers.Add(passenger);
             passenger.transform.SetParent(transform);
+            passenger.SetDestination(destinations, PassengerState.Elevator);
             if (queue.Count == 0) break;
             yield return new WaitForSeconds(0.5f);
         }
         yield break;
-        
+    }
+    private void HandlesEnteringElevator()
+    {
+        Vector2 destinations = _collider.bounds.min;
     }
     #endregion
 

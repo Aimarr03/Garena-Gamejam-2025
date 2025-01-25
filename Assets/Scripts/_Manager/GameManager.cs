@@ -20,6 +20,7 @@ public class GameManager : MonoBehaviour
         {
             instance = this;
             HandlesChangingGameState(GameState.MainMenu);
+            SwitchCamera(mainCamera);
             inputManager = GetComponent<InputManager>();
             IntroScene();
         }
@@ -87,16 +88,29 @@ public class GameManager : MonoBehaviour
         });
         
     }
+    [Header("Gameplay")]
+    [SerializeField] private Transform slaveryPanel;
+    [SerializeField] private Transform LevelContainer;
     private async void TransitionToGameplay()
     {
         paused = true;
         Text_Help.DOKill();
         Text_MainMenu.DOFade(0, 0.3f);
         await Task.Delay(800);
-        Camera.main.transform.DOMoveY(5, 0.7f).SetEase(Ease.InOutFlash);
-        await Task.Delay(2500);
+        SwitchCamera(lowerCamera);
+        await Task.Delay(800);
+        slaveryPanel.DOLocalMoveY(0, 0.4f).SetEase(Ease.OutCubic).SetDelay(0.4f);
+        await Task.Delay(500);
+        for (int index = 0; index < LevelContainer.childCount; index++)
+        {
+            Transform childElement = LevelContainer.GetChild(index);
+            childElement.DOLocalMoveY(-140, 0.3f).SetEase(Ease.OutSine);
+            await Task.Delay(100);
+        }
+        await Task.Delay(1500);
         paused = false;
         HandlesChangingGameState(GameState.Gameplay);
+        
     }
     private void MainMenuStart()
     {
@@ -128,6 +142,7 @@ public class GameManager : MonoBehaviour
         }
     }
     #endregion
+
     private void InputManager_onEscaped()
     {
         switch (currentState)
@@ -155,6 +170,16 @@ public class GameManager : MonoBehaviour
     }
 
     #endregion
+    private void SwitchCamera(CinemachineCamera newCamera)
+    {
+        Debug.Log("Switch to " + newCamera.ToString());
+        foreach(CinemachineCamera currentCamera in ListOfCamera)
+        {
+            bool check = newCamera == currentCamera;
+            Debug.Log($"Checking current Camera {currentCamera} => {check}");
+            currentCamera.Priority = check ? 10 : 0;
+        }
+    }
 }
 public enum GameState
 {

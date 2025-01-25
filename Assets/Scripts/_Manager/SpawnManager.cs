@@ -21,7 +21,7 @@ public class SpawnManager : MonoBehaviour
     private int currentPassengerCollected = 0;
     private bool wavePhase = false;
 
-    [SerializeField] private Passenger passengerPrefab;
+    [SerializeField] private Passenger[] passengerPrefabs;
     
     private Queue<Passenger> queuePasengers = new Queue<Passenger>();
     [SerializeField] private Transform poolContainer;
@@ -35,7 +35,7 @@ public class SpawnManager : MonoBehaviour
         
         for(int index = 0; index < maxPassenger; index++)
         {
-            Passenger _currentPasenger = Instantiate(passengerPrefab, poolContainer);
+            Passenger _currentPasenger = Instantiate(passengerPrefabs[Random.Range(0, passengerPrefabs.Length)], poolContainer);
             _currentPasenger.gameObject.SetActive(false);
         }
     }
@@ -57,7 +57,7 @@ public class SpawnManager : MonoBehaviour
 
     private void OnDisable()
     {
-        Passenger.OnFinishState += Passenger_OnFinishState;
+        Passenger.OnFinishState -= Passenger_OnFinishState;
     }
     private void Update()
     {
@@ -88,7 +88,9 @@ public class SpawnManager : MonoBehaviour
     {
         Passenger passenger = DequeuePassenger();
 
-        FloorManager floorManager = ListOfFloors[Random.Range(0, ListOfFloors.Count)];
+        //FloorManager floorManager = ListOfFloors[Random.Range(0, ListOfFloors.Count)];
+        FloorManager floorManager = ListOfFloors[0];
+        
         string[] FloorsConnected = floorManager.GetFloorNames();
         string nextFloorName = FloorsConnected[Random.Range(0, FloorsConnected.Length)];
         FloorManager destinationFloor = floorManager.GetFloorDestination(nextFloorName);
@@ -109,7 +111,7 @@ public class SpawnManager : MonoBehaviour
         Passenger passenger;
         if(queuePasengers.Count <= 0)
         {
-            passenger = Instantiate(passengerPrefab, poolContainer);
+            passenger = Instantiate(passengerPrefabs[Random.Range(0, passengerPrefabs.Length)], poolContainer);
             passenger.transform.parent = null;
             return passenger;
         }
