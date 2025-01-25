@@ -1,40 +1,123 @@
+using System;
 using UnityEngine;
 
 public class Passenger : MonoBehaviour
 {
-    [HideInInspector] public FloorManager _currentFloor;
-    [HideInInspector] public FloorManager targetFloor;
+    private Collider2D _collider;
+    private Rigidbody2D _rigidBody;
 
-    [SerializeField, Range(0, 0.3f)] private float weight;
-    [SerializeField, Range(2, 4)] private float speed;
-    private PassengerState currentState;
-    private Vector2 Destinations;
+    public FloorManager currentFloor;
+    public FloorManager targetFloor;
+
+    [SerializeField, Range(0, 0.3f)] private float weight = 0.1f;
+    [SerializeField, Range(2, 4)] private float speed = 2.5f;
+    [SerializeField] private LayerMask npcMask;
+
+    public PassengerState currentState = PassengerState.Idle;
+    private Vector2 destination;
+    private Vector2 movementDirection;
+
+    public delegate void OnArrive();
+
+    public static event EventHandler<PassengerState> OnFinishState;
+    private void Awake()
+    {
+        _collider = GetComponent<Collider2D>();
+        _rigidBody = GetComponent<Rigidbody2D>();
+
+        if (_collider == null || _rigidBody == null)
+        {
+            Debug.LogError("Passenger is missing required components.");
+        }
+    }
+
     private void Update()
     {
-        switch(currentState)
-        {
-            case PassengerState.Idle: 
+        HandleMovementLogic();
+        HandleDetectingLogic();
+    }
 
-                break;
-            case PassengerState.Moving:
-                Vector2.MoveTowards(transform.position, Destinations, Time.deltaTime * speed);
-                if(Vector2.Distance(transform.position, Destinations) < 0.02f)
-                {
+    private void HandleMovementLogic()
+    {
+        if (currentState == PassengerState.Idle || currentState == PassengerState.Arrived) return;
+
+        // Move towards the destination
+        transform.position = Vector3.MoveTowards(transform.position, destination, Time.deltaTime * speed);
+
+        // Check if we've reached the destination
+        if (Vector2.Distance(transform.position, destination) < 0.01f)
+        {
+            switch (currentState)
+            {
+                case PassengerState.GoingIn:
+                    OnFinishState?.Invoke(this, currentState);
+                    break;
+                case PassengerState.Elevator:
                     currentState = PassengerState.Idle;
-                }
-                break;
+                    break;
+                case PassengerState.GoingOut:
+                    currentState = PassengerState.Arrived;
+                    OnFinishState?.Invoke(this, currentState);
+                    break;
+            }
         }
     }
-    public void SetDestinations(Vector2 newDestination)
+
+    private void HandleDetectingLogic()
     {
-        Destinations = newDestination;
-        if(currentState == PassengerState.Idle)
+        if (currentState == PassengerState.GoingIn)
         {
-            currentState = PassengerState.Moving;
+            RaycastHit2D[] hits = Physics2D.RaycastAll(_collider.bounds.center, movementDirection, 0.5f, npcMask);
+
+            foreach (RaycastHit2D hit in hits)
+            {
+                if (hit.collider != null && hit.collider.gameObject != gameObject)
+                {
+                    Debug.Log("Passenger detected another object and stopped.");
+                    currentState = PassengerState.Idle;
+                    return;
+                }
+            }
         }
+
+        if (targetFloor != null && Vector2.Distance(transform.position, targetFloor.EndPoint) < 0.01f)
+        {
+            Debug.Log("Passenger arrived at the target floor.");
+            currentState = PassengerState.Arrived;
+        }
+    }
+
+    public void SetCurrentFloor(FloorManager floorManager)
+    {
+        currentFloor = floorManager;
+        if (currentState == PassengerState.GoingOut) return;
+        currentFloor.passengers.Enqueue(this);
+    }
+
+    public void SetDestination(FloorManager targetFloor)
+    {
+        this.targetFloor = targetFloor;
+        if (currentState == PassengerState.Idle)
+        {
+            currentState = PassengerState.GoingIn;
+        }
+    }
+
+    public void SetDestination(Vector2 newDestination, PassengerState state)
+    {
+        destination = newDestination;
+        movementDirection = (destination - (Vector2)transform.position).normalized;
+        currentState = state;
+
+        Debug.Log($"Destination set to {destination} with state {state}.");
     }
 }
+
 public enum PassengerState
 {
-    Idle, Moving
+    Idle,
+    GoingIn,
+    Elevator,
+    GoingOut,
+    Arrived,
 }

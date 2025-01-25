@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Diagnostics.Tracing;
 using UnityEngine;
 
 public class Elevator : MonoBehaviour
@@ -6,9 +8,13 @@ public class Elevator : MonoBehaviour
     private Collider2D _collider;
 
     private FloorBehaviour _currentLowerFloor;
+    
+    private FloorManager _currentFloorManager;
+    private List<Passenger> passengers = new List<Passenger>();
+    private int maxPassengers = 5;
 
-    [SerializeField, Range(1, 15)] private float _maxUpwardVelocity = 10f;
-    [SerializeField, Range(1,200)]private float forcePower = 2f;
+    [SerializeField, UnityEngine.Range(1, 15)] private float _maxUpwardVelocity = 10f;
+    [SerializeField, UnityEngine.Range(1,200)]private float forcePower = 2f;
 
     private bool isGround;
     #region MONOBEHAVIOUR CALLBACKS
@@ -21,11 +27,13 @@ public class Elevator : MonoBehaviour
     {
         InputManager.buttonMashed += InputManager_buttonMashed;
         InputManager.buttonUnloadElevator += InputManager_buttonUnloadElevator;
+        Passenger.OnFinishState += Passenger_OnFinishState;
     }
     private void OnDisable()
     {
         InputManager.buttonMashed -= InputManager_buttonMashed;
         InputManager.buttonUnloadElevator -= InputManager_buttonUnloadElevator;
+        Passenger.OnFinishState -= Passenger_OnFinishState;
     }
     private void FixedUpdate()
     {
@@ -37,7 +45,7 @@ public class Elevator : MonoBehaviour
     #endregion
     private void InputManager_buttonMashed()
     {
-        Debug.Log("Button Mashed");
+        //Debug.Log("Button Mashed");
 
         Vector2 currentVelocity = _rigidBody.linearVelocity;
 
@@ -49,18 +57,36 @@ public class Elevator : MonoBehaviour
         }
         _rigidBody.linearVelocity = currentVelocity;
     }
+    
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if(elevatorState == ElevatorState.Static)
+        Debug.Log($"Colliding {collision.gameObject}");
+        _currentFloorManager ??= collision.gameObject.GetComponent<FloorManager>();
+        _currentLowerFloor ??= collision.gameObject.GetComponent<FloorBehaviour>();
+        isGround = true;
+
+        CalculateCollisionPower(collision);
+
+        if (elevatorState == ElevatorState.Static)
         {
-            Debug.Log("Mini Games");
             InputManager.buttonMashed += HandleDeloadingMashing;
             _currentLowerFloor = collision.gameObject.GetComponent<FloorBehaviour>();
-            isGround = true;
-            return;
+
+            HandlesDeloadingPassengers();
         }
-        Debug.Log($"Colliding {collision.gameObject}");
-        if (collision.gameObject.CompareTag("Ground"))
+    }
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        Debug.Log("Exiting from " + collision.gameObject.name);
+        isGround = false;
+    }
+    /*private void OnCollisionStay(Collision collision)
+    {
+        HandlesLoadingPassengers();
+    }*/
+    private void CalculateCollisionPower(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Ground") || collision.gameObject.CompareTag("Floor"))
         {
             Debug.Log("Hit Ground");
             Vector2 relativeVelocity = collision.relativeVelocity;
@@ -72,17 +98,66 @@ public class Elevator : MonoBehaviour
 
             float CollisionPower = (thisMass + otherMass) * relativeVelocity.magnitude;
             Debug.Log($"Collision Power <b><color=red>{CollisionPower}</color></b>");
-            isGround = true;
         }
     }
-    private void OnCollisionExit2D(Collision2D collision)
+    private void HandlesDeloadingPassengers()
     {
-        isGround = false;
+        if (passengers.Count > 0)
+        {
+            Debug.Log("Deloading Passengers");
+            Queue<Passenger> deportingPassengers = new Queue<Passenger>();
+
+            foreach (Passenger currentPassenger in passengers)
+            {
+                Debug.Log($"{currentPassenger.name} target Floors: {currentPassenger.targetFloor.name} " +
+                    $"current Floors: {_currentFloorManager.name}");
+                
+                bool testament = currentPassenger.targetFloor == _currentFloorManager;
+                if (testament)
+                {
+                    currentPassenger.currentState = PassengerState.GoingOut;
+                    currentPassenger.SetCurrentFloor(_currentFloorManager);
+                    currentPassenger.transform.SetParent(null);
+                    deportingPassengers.Enqueue(currentPassenger);
+                    
+                    currentPassenger.SetDestination(_currentFloorManager.EndPoint, PassengerState.GoingOut);
+                }
+            }
+            Debug.Log(deportingPassengers.Count);
+            while(deportingPassengers.Count > 0)
+            {
+                Passenger deportedPassenger = deportingPassengers.Dequeue();
+                passengers.Remove(deportedPassenger);
+            }
+        }
     }
+    private void Passenger_OnFinishState(object obj, PassengerState state)
+    {
+        Passenger passenger = obj as Passenger;
+        if(passenger.currentState == PassengerState.GoingIn)
+        {
+            HandlesLoadingPassengers(passenger);
+        }
+    }
+    private void HandlesLoadingPassengers(Passenger passenger)
+    {
+        if (passengers.Count > maxPassengers) return;
+        Debug.Log("Current Floor passengers: " + _currentFloorManager.passengers.Count);
+        Debug.Log("Handled Loading Passengers");
+        if (passenger.currentState == PassengerState.GoingOut) return;
+
+        Vector2 destinations = _collider.bounds.min;
+        passenger.SetDestination(destinations, PassengerState.Elevator);
+        passengers.Add(passenger);
+        passenger.transform.SetParent(transform);
+    }
+    
     #region Floor Changing Behaviour
     private void OnTriggerExit2D(Collider2D collision)
     {
-        //Debug.Log($"Triggering {collision.gameObject}");
+        if (elevatorState == ElevatorState.Static) return;
+        
+        Debug.Log($"Triggering Exit {collision.gameObject}");
         if (collision.gameObject.CompareTag("Floor"))
         {
             float bottomElevatorPosition = _collider.bounds.min.y;
@@ -93,6 +168,7 @@ public class Elevator : MonoBehaviour
             {
                 Debug.Log($"Renew Floor: {collision.gameObject}");
                 _currentLowerFloor = collision.gameObject.GetComponent<FloorBehaviour>();
+                _currentFloorManager = collision.gameObject.GetComponent<FloorManager>();
             }
             else
             {
@@ -101,7 +177,8 @@ public class Elevator : MonoBehaviour
                     FloorBehaviour lowerFloor = _currentLowerFloor.GetLowerFloor();
                     string groundLevel = lowerFloor == null ? "Ground Level" : lowerFloor.gameObject.ToString();
                     Debug.Log($"Renew Lower Floor: {groundLevel}");
-                    _currentLowerFloor = _currentLowerFloor.GetLowerFloor();
+                    _currentLowerFloor = lowerFloor;
+                    _currentFloorManager = _currentFloorManager.lowerFloor;
                 }
             }
         }
@@ -115,8 +192,12 @@ public class Elevator : MonoBehaviour
         {
             if (isGround)
             {
+                foreach (Passenger passenger in passengers)
+                {
+                    if (passenger.transform.parent == null) return;
+                }
                 Debug.Log("Return to Moving Again");
-                _currentLowerFloor.EnablePlatformEffector(false);
+                _currentLowerFloor?.EnablePlatformEffector(false);
                 InputManager.buttonMashed -= HandleDeloadingMashing;
                 InputManager.buttonMashed += InputManager_buttonMashed;
                 elevatorState = ElevatorState.Moving;
@@ -132,7 +213,7 @@ public class Elevator : MonoBehaviour
     }
     private void HandleDeloadingMashing()
     {
-        Debug.Log("Stabilizing");
+        //Debug.Log("Stabilizing");
     }
     #endregion
 }

@@ -21,6 +21,8 @@ public class InputManager : MonoBehaviour
     }
     private void OnDisable()
     {
+        inputSystem.Gameplay.Disable();
+        inputSystem.General.Disable();
         GameManager.instance.OnChangeState -= Instance_OnChangeState;
         inputSystem.General.Escape.performed -= Escape_performed;
         GameplayMapDisabled();

@@ -129,13 +129,13 @@ GameObject:
   m_Component:
   - component: {fileID: 80889961}
   - component: {fileID: 80889962}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Bottom Detection
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &80889961
 Transform:
   m_ObjectHideFlags: 0
@@ -439,6 +439,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spawnPos: {fileID: 1166817980}
   endPos: {fileID: 768670632}
+  elevatorWaitingPos: {fileID: 659603854}
+  lowerFloor: {fileID: 1575354791}
   floorNumber: 3
 --- !u!1 &519420028
 GameObject:
@@ -656,6 +658,37 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &659603853
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 659603854}
+  m_Layer: 0
+  m_Name: Elevator Point
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &659603854
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 659603853}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1.08, y: -0.98258066, z: 0.036513973}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -934,6 +967,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spawnPos: {fileID: 1166817980}
   endPos: {fileID: 768670632}
+  elevatorWaitingPos: {fileID: 659603854}
+  lowerFloor: {fileID: 1548694736}
   floorNumber: 1
 --- !u!1 &979759113
 GameObject:
@@ -965,9 +1000,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ListOfFloors: []
-  _baseInterval: 0
-  maxPassenger: 0
-  passengerPrefab: {fileID: 0}
+  _baseInterval: 3
+  maxPassenger: 1
+  passengerPrefab: {fileID: 9186428167038201816, guid: 94e289ea98ca7154b8f95a4f05598fec, type: 3}
+  poolContainer: {fileID: 979759115}
 --- !u!4 &979759115
 Transform:
   m_ObjectHideFlags: 0
@@ -1379,6 +1415,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spawnPos: {fileID: 1166817980}
   endPos: {fileID: 768670632}
+  elevatorWaitingPos: {fileID: 659603854}
+  lowerFloor: {fileID: 0}
   floorNumber: 0
 --- !u!1 &1575354784
 GameObject:
@@ -1591,6 +1629,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spawnPos: {fileID: 1166817980}
   endPos: {fileID: 768670632}
+  elevatorWaitingPos: {fileID: 659603854}
+  lowerFloor: {fileID: 920426710}
   floorNumber: 2
 --- !u!1 &1842381690
 GameObject:
@@ -1605,7 +1645,7 @@ GameObject:
   - component: {fileID: 1842381692}
   - component: {fileID: 1842381691}
   - component: {fileID: 1842381695}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Elevator
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1665,7 +1705,7 @@ BoxCollider2D:
     m_Bits: 4294967295
   m_ContactCaptureLayers:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 375
   m_CallbackLayers:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -1816,6 +1856,7 @@ SceneRoots:
   - {fileID: 862036225}
   - {fileID: 1166817980}
   - {fileID: 768670632}
+  - {fileID: 659603854}
   - {fileID: 2001829485}
   - {fileID: 979759115}
   - {fileID: 1482675255}
