@@ -21,11 +21,16 @@ public class InputManager : MonoBehaviour
     }
     private void OnDisable()
     {
-        inputSystem.Gameplay.Disable();
-        inputSystem.General.Disable();
         GameManager.instance.OnChangeState -= Instance_OnChangeState;
         inputSystem.General.Escape.performed -= Escape_performed;
         GameplayMapDisabled();
+        inputSystem.Disable();
+        //inputSystem.General.Disable();
+    }
+    private void OnDestroy()
+    {
+        inputSystem.Gameplay.Disable();
+        inputSystem.General.Disable();
     }
     #endregion
     #region General Input Event Logic

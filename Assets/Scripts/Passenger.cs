@@ -16,6 +16,7 @@ public class Passenger : MonoBehaviour
     public PassengerState currentState = PassengerState.Idle;
     private Vector2 destination;
     private Vector2 movementDirection;
+    private float direction;
 
     public delegate void OnArrive();
 
@@ -41,16 +42,15 @@ public class Passenger : MonoBehaviour
     {
         if (currentState == PassengerState.Idle || currentState == PassengerState.Arrived) return;
 
-        // Move towards the destination
-        transform.position = Vector3.MoveTowards(transform.position, destination, Time.deltaTime * speed);
-
-        // Check if we've reached the destination
-        if (Vector2.Distance(transform.position, destination) < 0.01f)
+        
+        if (Vector2.Distance(transform.position, destination) < 0.1f)
         {
+            _rigidBody.linearVelocity = Vector2.zero;
             switch (currentState)
             {
                 case PassengerState.GoingIn:
                     OnFinishState?.Invoke(this, currentState);
+                    currentState = PassengerState.Idle;
                     break;
                 case PassengerState.Elevator:
                     currentState = PassengerState.Idle;
@@ -97,18 +97,21 @@ public class Passenger : MonoBehaviour
     public void SetDestination(FloorManager targetFloor)
     {
         this.targetFloor = targetFloor;
+        _rigidBody.linearVelocityX = speed * movementDirection.x;
         if (currentState == PassengerState.Idle)
         {
             currentState = PassengerState.GoingIn;
         }
+
     }
 
     public void SetDestination(Vector2 newDestination, PassengerState state)
     {
         destination = newDestination;
         movementDirection = (destination - (Vector2)transform.position).normalized;
+        movementDirection.x = movementDirection.x > 0? 1 : -1;
         currentState = state;
-
+        _rigidBody.linearVelocityX = speed * movementDirection.x;
         Debug.Log($"Destination set to {destination} with state {state}.");
     }
 }

@@ -1,5 +1,7 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 public class Elevator : MonoBehaviour
@@ -61,19 +63,17 @@ public class Elevator : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         Debug.Log($"Colliding {collision.gameObject}");
-        _currentFloorManager ??= collision.gameObject.GetComponent<FloorManager>();
-        _currentLowerFloor ??= collision.gameObject.GetComponent<FloorBehaviour>();
+        _currentFloorManager = collision.gameObject.GetComponent<FloorManager>();
+        _currentLowerFloor = collision.gameObject.GetComponent<FloorBehaviour>();
         isGround = true;
 
         CalculateCollisionPower(collision);
+        InputManager.buttonMashed -= InputManager_buttonMashed;
+        elevatorState = ElevatorState.Static;
+        InputManager.buttonMashed -= InputManager_buttonMashed;
+        _currentLowerFloor = collision.gameObject.GetComponent<FloorBehaviour>();
 
-        if (elevatorState == ElevatorState.Static)
-        {
-            InputManager.buttonMashed += HandleDeloadingMashing;
-            _currentLowerFloor = collision.gameObject.GetComponent<FloorBehaviour>();
-
-            HandlesDeloadingPassengers();
-        }
+        StartCoroutine(HandleTransitPassenger());
     }
     private void OnCollisionExit2D(Collision2D collision)
     {
@@ -100,7 +100,12 @@ public class Elevator : MonoBehaviour
             Debug.Log($"Collision Power <b><color=red>{CollisionPower}</color></b>");
         }
     }
-    private void HandlesDeloadingPassengers()
+    private IEnumerator HandleTransitPassenger()
+    {
+        yield return HandlesDeloadingPassengers();
+        yield return HandlesLoadingPassengers();
+    }
+    private IEnumerator HandlesDeloadingPassengers()
     {
         if (passengers.Count > 0)
         {
@@ -121,6 +126,7 @@ public class Elevator : MonoBehaviour
                     deportingPassengers.Enqueue(currentPassenger);
                     
                     currentPassenger.SetDestination(_currentFloorManager.EndPoint, PassengerState.GoingOut);
+                    yield return new WaitForSeconds(0.4f);
                 }
             }
             Debug.Log(deportingPassengers.Count);
@@ -131,28 +137,69 @@ public class Elevator : MonoBehaviour
             }
         }
     }
+
+    //========================================================================================//
+    //========================================================================================//
+
+    #region Passengers Logic
+    private Dictionary<int, List<Passenger>> ListOfPassengersWaiting = new Dictionary<int, List<Passenger>>
+    {
+        { 0, new List<Passenger>() },
+        { 1, new List<Passenger>() },
+        { 2, new List<Passenger>() }
+    };
     private void Passenger_OnFinishState(object obj, PassengerState state)
     {
         Passenger passenger = obj as Passenger;
         if(passenger.currentState == PassengerState.GoingIn)
         {
-            HandlesLoadingPassengers(passenger);
+            HandlesPreLoadingPassengers(passenger);
         }
     }
-    private void HandlesLoadingPassengers(Passenger passenger)
+    private void HandlesPreLoadingPassengers(Passenger passenger)
     {
-        if (passengers.Count > maxPassengers) return;
-        Debug.Log("Current Floor passengers: " + _currentFloorManager.passengers.Count);
-        Debug.Log("Handled Loading Passengers");
-        if (passenger.currentState == PassengerState.GoingOut) return;
-
-        Vector2 destinations = _collider.bounds.min;
-        passenger.SetDestination(destinations, PassengerState.Elevator);
-        passengers.Add(passenger);
-        passenger.transform.SetParent(transform);
+        FloorManager passengerFloor = passenger.currentFloor;
+        int floorNumber = passengerFloor.floorNumber;
+        if (ListOfPassengersWaiting.ContainsKey(floorNumber))
+        {
+            ListOfPassengersWaiting[floorNumber].Add(passenger);
+        }
+        else
+        {
+            ListOfPassengersWaiting.Add(floorNumber, new List<Passenger>());
+            ListOfPassengersWaiting[floorNumber].Add(passenger);
+        }
+        if(isGround && _currentFloorManager.floorNumber == floorNumber)
+        {
+            StartCoroutine(HandlesLoadingPassengers());
+        }
     }
-    
-    #region Floor Changing Behaviour
+    private IEnumerator HandlesLoadingPassengers()
+    {
+        List<Passenger> passengerOnTheFloor = ListOfPassengersWaiting[_currentFloorManager.floorNumber];
+        
+        if (passengers.Count > maxPassengers || passengerOnTheFloor.Count == 0) yield break;
+        
+        Debug.Log("Current Floor passengers: " + passengerOnTheFloor.Count);
+        Debug.Log("Handled Loading Passengers");
+        Queue<Passenger> queue = new Queue<Passenger>(passengerOnTheFloor);
+        if (queue.Count == 0) yield break;
+        Vector2 destinations = _collider.bounds.min;
+        while(passengers.Count < maxPassengers)
+        {
+            Passenger passenger = queue.Dequeue();
+            passenger.SetDestination(destinations, PassengerState.Elevator);
+            passengers.Add(passenger);
+            passenger.transform.SetParent(transform);
+            if (queue.Count == 0) break;
+            yield return new WaitForSeconds(0.5f);
+        }
+        yield break;
+        
+    }
+    #endregion
+
+    #region Floor Changing Logic
     private void OnTriggerExit2D(Collider2D collision)
     {
         if (elevatorState == ElevatorState.Static) return;
@@ -198,7 +245,7 @@ public class Elevator : MonoBehaviour
                 }
                 Debug.Log("Return to Moving Again");
                 _currentLowerFloor?.EnablePlatformEffector(false);
-                InputManager.buttonMashed -= HandleDeloadingMashing;
+                InputManager.buttonMashed -= HandleStabilizeLift;
                 InputManager.buttonMashed += InputManager_buttonMashed;
                 elevatorState = ElevatorState.Moving;
             }
@@ -211,7 +258,7 @@ public class Elevator : MonoBehaviour
             _currentLowerFloor.EnablePlatformEffector(true);
         }
     }
-    private void HandleDeloadingMashing()
+    private void HandleStabilizeLift()
     {
         //Debug.Log("Stabilizing");
     }

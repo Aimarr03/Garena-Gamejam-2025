@@ -1,0 +1,16 @@
+{
+    "minInterval"       : 1.5,
+    "maxInterval"       : 3,
+    "intervalToSpawn"   : 5,
+    "totalPassengers"   : 10,
+    "waves"             :[
+        {
+            "requirementToSpawn"            : 10,
+            "totalPassengers"               : 4,
+            "currentDeliveredPassengers"    : 0
+        }
+    ],
+    "spawns"             : [
+        1, 1, 1, 2, 2, 1, 2
+    ]
+}
