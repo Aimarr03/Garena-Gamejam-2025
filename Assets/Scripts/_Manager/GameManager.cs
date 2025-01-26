@@ -91,6 +91,8 @@ public class GameManager : MonoBehaviour
     [Header("Gameplay")]
     [SerializeField] private Transform slaveryPanel;
     [SerializeField] private Transform LevelContainer;
+    [SerializeField] private RectTransform Algojo;
+    
     private async void TransitionToGameplay()
     {
         paused = true;
@@ -100,6 +102,7 @@ public class GameManager : MonoBehaviour
         SwitchCamera(lowerCamera);
         await Task.Delay(800);
         slaveryPanel.DOLocalMoveY(0, 0.4f).SetEase(Ease.OutCubic).SetDelay(0.4f);
+        Algojo.DOLocalMoveX(1080, 0.8f).SetEase(Ease.OutCubic).SetDelay(0.3f);
         await Task.Delay(500);
         for (int index = 0; index < LevelContainer.childCount; index++)
         {

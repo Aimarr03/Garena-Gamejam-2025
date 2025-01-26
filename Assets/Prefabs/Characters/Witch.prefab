@@ -341,7 +341,7 @@ MonoBehaviour:
   npcMask:
     serializedVersion: 2
     m_Bits: 128
-  currentState: 0
+  isChanging: 0
 --- !u!61 &3485432168829103401
 BoxCollider2D:
   m_ObjectHideFlags: 0

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
@@ -8,22 +9,25 @@ public class Elevator : MonoBehaviour
 {
     private Rigidbody2D _rigidBody;
     private Collider2D _collider;
+    private Animator _animator;
 
     private FloorBehaviour _currentLowerFloor;
     
     private FloorManager _currentFloorManager;
     private List<Passenger> passengers = new List<Passenger>();
     private int maxPassengers = 5;
-
     [SerializeField, UnityEngine.Range(1, 15)] private float _maxUpwardVelocity = 10f;
     [SerializeField, UnityEngine.Range(1,200)]private float forcePower = 2f;
 
+    public static event Action<int, int> OnUpdatingPassengers;
     private bool isGround;
+    private bool open = false;
     #region MONOBEHAVIOUR CALLBACKS
     private void Awake()
     {
         _rigidBody = GetComponent<Rigidbody2D>();
         _collider = GetComponent<Collider2D>();
+        _animator = GetComponent<Animator>();
     }
     private void Start()
     {
@@ -63,6 +67,11 @@ public class Elevator : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         Debug.Log($"Colliding {collision.gameObject}");
+        if (!open)
+        {
+            _animator.SetBool("Open", true);
+            open = true;
+        }
         _currentFloorManager = collision.gameObject.GetComponent<FloorManager>();
         _currentLowerFloor = collision.gameObject.GetComponent<FloorBehaviour>();
         isGround = true;
@@ -72,8 +81,13 @@ public class Elevator : MonoBehaviour
         elevatorState = ElevatorState.Static;
         InputManager.buttonMashed -= InputManager_buttonMashed;
         _currentLowerFloor = collision.gameObject.GetComponent<FloorBehaviour>();
-
         StartCoroutine(HandleTransitPassenger());
+    }
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        isGround = true;
+        _currentFloorManager = collision.gameObject.GetComponent<FloorManager>();
+        _currentLowerFloor = collision.gameObject.GetComponent<FloorBehaviour>();
     }
     private void OnCollisionExit2D(Collision2D collision)
     {
@@ -126,10 +140,11 @@ public class Elevator : MonoBehaviour
                     deportingPassengers.Enqueue(currentPassenger);
                     
                     currentPassenger.SetDestination(_currentFloorManager.EndPoint, PassengerState.GoingOut);
-                    yield return new WaitForSeconds(0.4f);
+                    OnUpdatingPassengers(currentPassenger.targetFloor.floorNumber, -1);
+                    yield return new WaitForSeconds(0.2f);
+                    currentPassenger.SetVisualOnLift(false);
                 }
             }
-            Debug.Log(deportingPassengers.Count);
             while(deportingPassengers.Count > 0)
             {
                 Passenger deportedPassenger = deportingPassengers.Dequeue();
@@ -171,6 +186,7 @@ public class Elevator : MonoBehaviour
         }
         if(isGround && _currentFloorManager.floorNumber == floorNumber)
         {
+            Debug.Log($"{passenger.name} is requesting going in");
             StartCoroutine(HandlesLoadingPassengers());
         }
     }
@@ -178,6 +194,7 @@ public class Elevator : MonoBehaviour
     [SerializeField] private Collider2D _elevatorWaitingArea;
     private IEnumerator HandlesLoadingPassengers()
     {
+        
         List<Passenger> passengerOnTheFloor = ListOfPassengersWaiting[_currentFloorManager.floorNumber];
         
         if (passengers.Count > maxPassengers || passengerOnTheFloor.Count == 0) yield break;
@@ -187,15 +204,20 @@ public class Elevator : MonoBehaviour
         Queue<Passenger> queue = new Queue<Passenger>(passengerOnTheFloor);
         if (queue.Count == 0) yield break;
         Bounds AreaLift = _elevatorWaitingArea.bounds;
-        Vector2 destinations = new Vector2(Random.Range(AreaLift.min.x, AreaLift.max.x), AreaLift.min.y);
+        Vector2 destinations = new Vector2(UnityEngine.Random.Range(AreaLift.min.x, AreaLift.max.x), AreaLift.min.y);
         while(passengers.Count < maxPassengers)
         {
             Passenger passenger = queue.Dequeue();
-            passenger.transform.position = _elevatorStarterPoint.bounds.min;
+            if(passenger.currentFloor.floorNumber != _currentFloorManager.floorNumber)
+            {
+                continue;
+            }
             passenger.SetVisualOnLift(true);
             passengers.Add(passenger);
             passenger.transform.SetParent(transform);
             passenger.SetDestination(destinations, PassengerState.Elevator);
+            passenger.transform.position = destinations;
+            OnUpdatingPassengers(passenger.targetFloor.floorNumber, 1);
             if (queue.Count == 0) break;
             yield return new WaitForSeconds(0.5f);
         }
@@ -256,6 +278,11 @@ public class Elevator : MonoBehaviour
                 InputManager.buttonMashed -= HandleStabilizeLift;
                 InputManager.buttonMashed += InputManager_buttonMashed;
                 elevatorState = ElevatorState.Moving;
+                if (open)
+                {
+                    open = false;
+                    _animator.SetBool("Open", open);
+                }
             }
             return;
         }

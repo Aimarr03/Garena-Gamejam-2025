@@ -422,12 +422,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentFloor: {fileID: 0}
   targetFloor: {fileID: 0}
-  weight: 0.1
+  weight: 0.3
   speed: 2.5
   npcMask:
     serializedVersion: 2
     m_Bits: 128
-  currentState: 0
+  isChanging: 0
 --- !u!61 &5577298157730134071
 BoxCollider2D:
   m_ObjectHideFlags: 0

@@ -5,6 +5,9 @@ public class Passenger : MonoBehaviour
 {
     private Collider2D _collider;
     private Rigidbody2D _rigidBody;
+    private Animator _animator;
+
+    [Header("ID")] public string ID = "ID";
 
     public FloorManager currentFloor;
     public FloorManager targetFloor;
@@ -34,6 +37,7 @@ public class Passenger : MonoBehaviour
     {
         _collider = GetComponent<Collider2D>();
         _rigidBody = GetComponent<Rigidbody2D>();
+        _animator = GetComponent<Animator>();
         allSpriteRenderers = GetComponentsInChildren<SpriteRenderer>();
         if (_collider == null || _rigidBody == null)
         {
@@ -53,8 +57,7 @@ public class Passenger : MonoBehaviour
     {
         if (currentState == PassengerState.Idle || currentState == PassengerState.Arrived) return;
 
-        //Debug.Log(Vector2.Distance(transform.position, destination) < 0.1f);
-        if (Vector2.Distance(transform.position, destination) < 0.1f)
+        if (Vector2.Distance(transform.position, destination) < 0.2f)
         {
             _rigidBody.linearVelocity = Vector2.zero;
             switch (currentState)
@@ -70,11 +73,13 @@ public class Passenger : MonoBehaviour
                     isChanging = true;
                     break;
                 case PassengerState.GoingOut:
+                    Debug.Log("Arrived at final destination");
                     currentState = PassengerState.Arrived;
                     OnFinishState?.Invoke(this, currentState);
                     isChanging = true;
                     break;
             }
+            _animator.SetBool("IsMoving", false);
         }
     }
 
@@ -90,6 +95,7 @@ public class Passenger : MonoBehaviour
                 {
                     Debug.Log("Passenger detected another object and stopped.");
                     currentState = PassengerState.Idle;
+                    _rigidBody.linearVelocity = Vector2.zero;
                     return;
                 }
             }
@@ -124,12 +130,14 @@ public class Passenger : MonoBehaviour
     public void SetDestination(Vector2 newDestination, PassengerState state)
     {
         destination = newDestination;
+        destination.y = transform.position.y;
         movementDirection = (destination - (Vector2)transform.position).normalized;
         movementDirection.x = movementDirection.x > 0? 1 : -1;
         currentState = state;
         _rigidBody.linearVelocityX = speed * movementDirection.x;
         Debug.Log($"Destination set to {Vector2.Distance(transform.position, destination)} with state {currentState}.");
         isChanging = false;
+        _animator.SetBool("IsMoving", true);
     }
     public void SetVisualOnLift(bool value)
     {

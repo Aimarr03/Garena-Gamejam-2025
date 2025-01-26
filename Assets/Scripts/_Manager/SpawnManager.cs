@@ -103,7 +103,6 @@ public class SpawnManager : MonoBehaviour
 
         passenger.transform.position = floorManager.SpawnPoint;
         passenger.SetDestination(floorManager.ElevatorPoint, PassengerState.GoingIn);
-        currentPassengerCount++;
     }
     #region Object Pooling
     private Passenger DequeuePassenger()
@@ -128,19 +127,22 @@ public class SpawnManager : MonoBehaviour
     }
     private void Passenger_OnFinishState(object passenger, PassengerState state)
     {
+        //Debug.Log($"Passenger Arrived At Destinations, {passenger} {state}");
         if(state == PassengerState.Arrived)
         {
             EnqueuePassenger(passenger as Passenger);
             currentPassengerCount--;
             currentPassengerCollected++;
-        }
-        if(currentPassengerCount == 0)
-        {
-            if(currentPassengerCollected >= currentWave.requirementToSpawn)
+            Debug.Log("Handling Logic");
+            if (currentPassengerCount == 0)
             {
-                wavePhase = true;
+                if (currentPassengerCollected >= currentWave.requirementToSpawn)
+                {
+                    wavePhase = true;
+                }
             }
         }
+        
     }
     #endregion
 }
